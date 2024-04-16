@@ -1,8 +1,25 @@
+import time
 import requests
-import asyncio
-import aiohttp
+import threading
 from bs4 import BeautifulSoup
 
+extracting = True
+
+def animate():
+	global extracting
+	n_dots = 0
+
+	print("\nExtracting the data", end="")
+	while extracting:
+		if n_dots == 3:
+			print(end='\b\b\b', flush=True)
+			print(end='   ',    flush=True)
+			print(end='\b\b\b', flush=True)
+			n_dots = 0
+		else:
+			print(end='.', flush=True)
+			n_dots += 1
+		time.sleep(0.3)
 
 class	WebScrape:
 	def	getIndexHtml(self, url: str):
@@ -15,7 +32,7 @@ class	WebScrape:
 				#Writing the html content of the website to the file
 				with open('index.html', 'w') as f:
 					f.write(soup.prettify())
-				print("Success")
+				print("\nData extracted. Successfully created index.html file.")
 			else:
 				print(f"Site reuturned status code: {response.status_code}")
 		except requests.exceptions.RequestException as e:
@@ -70,8 +87,44 @@ class	WebScrape:
 			with open('invalid_links.txt', 'w') as f:
 				for link in invalid_links:
 					f.write("".join(link) + "\n")
+		print("\nData extracted. Successfully created valid_links.txt and invalid_links.txt.")
+
+def main():
+	print("\nEnter 1 for index.html file of web page")
+	print("Enter 2 for valid and invalid links from web page")
+	print("Enter 3 (will execute option 1 and 2)\n")
+	while True:
+		selection = 0
+		try:
+			selection = int(input("Enter: "))
+			if selection in range(1,4):
+				break
+			else:
+				print("Please enter valid option(1-3).")
+		except ValueError:
+			print("Please enter a valid integer.")
+	url = ""
+	while True:
+		url = input("Enter a url (http or https needed): ")
+		if url.startswith(('http://', 'https://')):
+			break
+		else:
+			print("\nPlease enter url in a valid format http://example.com or htpps://example.com\n")
+	global extracting
+	scrape = WebScrape()
+	anim_thread = threading.Thread(target=animate)
+	anim_thread.start()
+	if selection == 1:
+		scrape.getIndexHtml(url)
+		extracting = False
+	elif selection == 2:
+		scrape.extractLinks(url)
+		extracting = False
+	elif selection == 3:
+		scrape.getIndexHtml(url)
+		scrape.extractLinks(url)
+		extracting = False
+	anim_thread.join()
 
 if __name__ == "__main__":
-	url = "https://www.w3schools.com/python/python_file_open.asp"
-	scrape = WebScrape()
-	scrape.extractLinks(url)
+	main()
